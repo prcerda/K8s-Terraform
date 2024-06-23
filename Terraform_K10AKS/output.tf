@@ -22,10 +22,21 @@ output "kubernetes_cluster_name" {
   value = azurerm_kubernetes_cluster.aks-cluster.name
 }
 
-output "kube_config" {
-  value = nonsensitive(azurerm_kubernetes_cluster.aks-cluster.kube_config_raw)
+output "kubeconfig" {
+  description = "Configure kubeconfig to access this cluster"
+  value       = "az aks get-credentials --resource-group ${azurerm_resource_group.demo_rgroup.name} --name ${azurerm_kubernetes_cluster.aks-cluster.name}"
 }
 
-output "managed_identity_id" {
-  value = azurerm_user_assigned_identity.aks-demo-id.client_id
+output "k10token" {
+  value = nonsensitive(kubernetes_token_request_v1.k10token.token)
+}
+
+output "k10url" {
+  description = "Kasten K10 URL"
+  value = "http://${data.kubernetes_service_v1.gateway-ext.status.0.load_balancer.0.ingress.0.ip}/k10/"
+}
+
+output "demoapp_url" {
+  description = "Demo App URL"
+  value = "http://${kubernetes_service_v1.stock-demo-svc.status.0.load_balancer.0.ingress.0.ip}"
 }
