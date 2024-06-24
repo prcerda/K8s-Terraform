@@ -1,6 +1,6 @@
 ## Kasten namespace
 resource "kubernetes_namespace" "kastenio" {
-  depends_on = [azurerm_kubernetes_cluster.aks-cluster]
+  depends_on = [module.eks,helm_release.aws-csi-eks]
   metadata {
     name = "kasten-io"
   }
@@ -8,7 +8,7 @@ resource "kubernetes_namespace" "kastenio" {
 
 ## Kasten Helm
 resource "helm_release" "k10" {
-  depends_on = [azurerm_kubernetes_cluster.aks-cluster,helm_release.az-volumesnapclass]  
+  depends_on = [module.eks,helm_release.aws-csi-eks,aws_iam_access_key.kasten,aws_iam_user_policy.kasten]  
   name = "k10"
   namespace = kubernetes_namespace.kastenio.metadata.0.name
   repository = "https://charts.kasten.io/"
@@ -20,14 +20,20 @@ resource "helm_release" "k10" {
   }
 
   set {
-    name  = "azure.useDefaultMSI"
-    value = true
-  } 
+    name  = "secrets.awsAccessKeyId"
+    value = aws_iam_access_key.kasten.id
+  }
+
+  set {
+    name  = "secrets.awsSecretAccessKey"
+    value = aws_iam_access_key.kasten.secret
+  }
 
   set {
     name  = "auth.tokenAuth.enabled"
     value = true
   } 
+
 }
 
 ##  Creating authentication Token
@@ -67,25 +73,32 @@ resource "kubernetes_config_map" "eula" {
 }
 
 
-## Kasten Azure Blob Location Profile
-resource "helm_release" "az-blob-locprofile" {
+## Kasten AWS S3 Location Profile
+resource "helm_release" "aws-s3-locprofile" {
   depends_on = [helm_release.k10]
-  name = "${var.cluster_name}-az-blob-locprofile"
+  name = "${var.cluster_name}-aws-s3-locprofile"
   repository = "https://prcerda.github.io/Helm-Charts/"
-  chart      = "az-blob-locprofile"  
+  chart      = "aws-s3-locprofile"  
   
   set {
-    name  = "K10Location.bucketname"
-    value = azurerm_storage_account.repository.name
+    name  = "bucketname"
+    value = aws_s3_bucket.k10_s3_bucket.bucket
   }
+
   set {
-    name  = "K10Location.azure_storage_env"
-    value = "AzureCloud"
+    name  = "aws_access_key"
+    value = aws_iam_access_key.kasten.id
   }
+
   set {
-    name  = "K10Location.azure_storage_key"
-    value = azurerm_storage_account.repository.primary_access_key
-  }  
+    name  = "aws_secret_access_key"
+    value = aws_iam_access_key.kasten.secret
+  }
+
+  set {
+    name  = "region"
+    value = var.region
+  }    
 }
 
 ## Kasten K10 Config
@@ -97,11 +110,11 @@ resource "helm_release" "k10-config" {
   
   set {
     name  = "bucketname"
-    value = azurerm_storage_account.repository.name
+    value = aws_s3_bucket.k10_s3_bucket.bucket
   }
 
   set {
     name  = "buckettype"
-    value = "azblob"
+    value = "awss3"
   }
 }

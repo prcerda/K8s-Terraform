@@ -1,7 +1,7 @@
 ## Demo app
 
 resource "kubernetes_namespace" "stock" {
-  depends_on = [azurerm_kubernetes_cluster.aks-cluster,helm_release.az-volumesnapclass]
+  depends_on = [module.eks,helm_release.aws-csi-eks]
 
   metadata {
     name = "stock"
@@ -9,7 +9,7 @@ resource "kubernetes_namespace" "stock" {
 }
 
 resource "helm_release" "stockgres" {
-  depends_on = [azurerm_kubernetes_cluster.aks-cluster,helm_release.az-volumesnapclass]
+  depends_on = [module.eks,helm_release.aws-csi-eks]
 
   name = "stockdb"
   namespace = kubernetes_namespace.stock.metadata[0].name
@@ -157,4 +157,3 @@ resource "kubernetes_service_v1" "stock-demo-svc" {
     type = "LoadBalancer"
   }
 }
-

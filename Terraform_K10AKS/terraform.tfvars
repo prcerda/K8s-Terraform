@@ -14,7 +14,7 @@ vnet_cidr_block_ipv4 = "10.50.0.0/16"
 subnet_cidr_block_ipv4 = "10.50.1.0/24"
 
 #labels
-owner = "patricio.r.cerda@veeam.com"
+owner = "owner@domain.com"
 activity = "demo"
 
 

@@ -2,7 +2,7 @@
 region    = "eu-west-3"
 
 #labels
-owner = "patricio.r.cerda@veeam.com"
+owner = "owner@domain.com"
 activity = "demo"
 
 #AWS VPC
